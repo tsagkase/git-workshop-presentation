@@ -30,7 +30,6 @@
 ### 1.3 Work session explained
 
    - local git, with no remote
-
    - before we start:
 
 ```sh
@@ -38,19 +37,17 @@
     alias tree=tree.com
 ```
 
-
 #### 1.3.1 Repository creation
 
    1. `ls -la`     # an empty directory
    2. `git status` # fails
    3. `git init`
-   4. `ls -la` # git init created .git/ and it's contents
+   4. `ls -la`     # git init created .git/ and it's contents
    5. `git status` # git is alive
    6. `git log`    # fails
    7. `tree .git`
    8. `rm .git/hooks/*`  # to focus on important stuff
    9. `tree .git`
-
 
 #### 1.3.2 *Staging*: objects without reference
 
@@ -59,19 +56,19 @@
 
    10. `>foods echo apple`
    11. `ls -la; cat foods` # A new file created in working dir
-   12. `tree .git` # no change under .git/ ... just workdir
+   12. `tree .git`   # no change under .git/ ... just workdir
    13. `git add foods` # this changes .git/ contents
-   14. `tree .git` # check index and files under objects/ subdirs
-   15. `git status` # reflects staged contents
-   16. `git log   ` # still fails
+   14. `tree .git`   # check index and files under objects/ subdirs
+   15. `git status`  # reflects staged contents
+   16. `git log   `  # still fails
    17. `git cat-file -p bf355d87f92649d8b22a9beda5136e1a6acc1fa3` # shows file contents staged
-+TODO: get ls-tree ...
-   18. `wc -c .git/index` # binary format; check size
++TODO: git ls-tree ...
+   18. `wc -c .git/index`      # binary format; check size
    19. `git rm --cached foods` # unstage the file
-   20. `git status` # confirm unstaging
-   21. `tree .git` # previously staged blobs await GC
+   20. `git status`  # confirm unstaging
+   21. `tree .git`   # previously staged blobs await GC
    22. `wc -c .git/index`  # smaller size; nothing staged now
-   23. `git add foods` # will change index contents again
+   23. `git add foods`     # will change index contents again
    24. `wc -c .git/index`  # changed back to previous size
    25. `git status`  # confirm staging
    26. `git log`     # nothing changed; still fails
@@ -88,15 +85,15 @@
       - git log
 
    27. `git commit --author="Alice <alice>" -m created`  # first commit
-   28. `git log`  # view commits
-   29. `git status` # previous staged objects no longer there
+   28. `git log`           # view commits
+   29. `git status`        # previous staged objects no longer there
    30. `wc -c .git/index`  # new staging index
-   31. `tree .git` # new toplevel logs/, more objects and COMMIT_EDITMSG
+   31. `tree .git`         # new toplevel logs/, more objects and COMMIT_EDITMSG
    32. `git cat-file -p 2080c5844204aa95bd2d9a6f54db449117e22417` # commit contents
    33. `git cat-file -p 999724252ad70173e02541d2920f01cb797a53b5` # tree contents
    34. `git cat-file -p bf355d87f92649d8b22a9beda5136e1a6acc1fa3` # the file contents
    35. `cat .git/COMMIT_EDITMSG`
-   36. `cat .git/HEAD`     # points to branch HEAD
+   36. `cat .git/HEAD`               # points to branch HEAD
    37. `cat .git/refs/heads/master`  # points to where we are now
    38. `git tag v1`
 
