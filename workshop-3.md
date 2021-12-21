@@ -205,7 +205,7 @@
         created
 ```
 
-## 3.X Git stash considered harmful
+## 3.5 Git stash considered harmful
 
    - `stash` is not as convenient as it looks
       - it follows stack logic
@@ -227,15 +227,78 @@
    - references
       - [git stash (pop) considered harmful](https://codingkilledthecat.wordpress.com/2012/04/27/git-stash-pop-considered-harmful/)
 
-## 3.5 Reflog: a sense of security
+## 3.6 A sense of security
 
-## 3.X Understanding git diff
+   - sometimes you think you're somewhere and you start doing things ...
+      - ... only to realize ten commands later you are not where you thought you were
+      - "how much damage did I do?" you ask
+   - other times you revisit a repo you haven't worked on in a while
+   - `git reflog`
+      - gives a sense of what you've done recently
+   - `git branch -a --sort=-committerdate`
+      - orders branches in descending order of commit times
 
-## 3.X Pull requests workflow
+## 3.7 Understanding git diff
 
-## 3.X Fragments of a developer's workflow
-### 3.X The special configuration branch
-### 3.X The push to origin as backup
-### 3.X Branches namespacing or taking care of your branches
-#### 3.X Temporary branches
+   - it's easier than you think
+
+## 3.8 Fragments of a developer's workflow
+
+   - various tricks
+   - *branches namespacing* is a good first step
+      - ***You are responsible for the state of you local repository!***
+
+### 3.8.1 The special configuration branch
+
+   - I got assigned to a project worked on by `johndoe@danaos.gr`
+   - `johndoe@danaos.gr` committed VS config files with paths on his machine
+      - paths on my machine are different
+   - instead of pushing your paths and returning bad karma ...
+
+```sh
+    ~$ git checkout -b cfg/etsagkas
+    ~$ notepad .vs/config/applicationhost.config    # change to paths on my machine
+    ~$ git add -f .vs/config/applicationhost.config # -f because it's in .gitignore
+    ~$ git commit -m "My local cfg to use to rebase"
+```
+
+   - now after fetching latest work of others
+
+```sh
+    ~$ git fetch
+    ~$ git checkout feature/new-from-johndoe  # checkout new feature locally
+    ~$ git cherry-pick cfg/etsagkas           # fix config to be able to work
+```
+
+   - after committing you're updates to the feature
+
+```sh
+    ~$ git rebase -i origin/feature/new-from-johndoe~1  # drop local config commit
+                                                        # note 'origin/' above
+    ~$ git push
+```
+
+### 3.8.2 Push to backup
+
+   - remember the **D** in DVCS?
+   - we know that Danaos Peripherals backs up Q: shared drive
+   - a quick solution to backing up your work until ready to merge:
+
+```sh
+    ~$ git remote add backup /Q/etsagkas/git-backups/myproject
+    ~$ git push backup feature/not-yet-complete
+```
+
+## 3.9 Pull requests workflow
+
+   - this model is popular on the internet
+   - in effect it means I can never push to `danaos/danaos-web`
+   - I can only push to `etsagkas/danaos-web`
+      - `etsagkas/danaos-web` is a fork of `danaos/danaos-web`
+   - let's assume we have an urgent issue codenamed: *tragedy*
+      - I fix the issue
+      - I push `fix/tragedy` to `etsagkas/danaos-web`
+      - then I send a *pull request* to `danaos/danaos-web` to merge `fix/tragedy`
+      - they review my branch commits and hopefully merge
+   - this is the safest model to work inside a big and serious company
 
