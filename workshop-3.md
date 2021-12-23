@@ -1,8 +1,5 @@
 # 3. Everyday git (... trouble!)
 
-   - difference between git:// and https://
-      - the need for ssh keys
-
 ## 3.1 Recursive .git folders *(subprojects)*
 
    - people forget and initialize git repositories inside other repositories
