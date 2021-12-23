@@ -1,318 +1,1041 @@
-# The training sessions
+# Git: a Version Control System (VCS)
 
-## 1. VCS (part 1)
+## 1. VCS history
 
-### 1.1. Introduction to VCS
+   - SCCS(1972)
+   - RCS (1982) - interleaved deltas
+   - CVS(1986) - RCS front-end, delta compression
+      - I started with it in 1994
+   - Subversion(2000) - was the first sexy (*non distributed*) VCS
+      - switched to it from CVS in 2001
+   - ***pessimistic locking*** (focusing on conflict avoidance instead of conflict resolution)
+      - was prevalent
+      - was a bad idea
 
-   - RCS
-   - CVS
-   - Subversion was the first sexy VCS
-   - ***pessimistic locking*** (focusing on conflict avoidance instead of conflict resolution) was a bad idea
+## 2. git as VCS
 
-### 1.2 git as VCS
+### 2.1 git as VCS (intro)
 
-   - works nicely for one dev only
-   - works for any size of project
-   - git tracks ***data*** and a ***DAG*** (graph)
-   - git does **NOT** really track filesystem constructs (i.e. filenames, directories, inodes)
-      - `git mv` (i.e. *rename*) is a hack!
-      - file or directory names (even branch names) can lead to issues in interplay between case in/sensitive FS.
-   - git fundamentals are:
+   - works beautifully as a VCS
+      - works nicely for one dev only
+      - works for any size of project
+
+   - `git` tracks:
+      - ***data***, and
+      - a ***DAG*** (graph)
+
+   - `git` does **NOT** (not really) track filesystem constructs (i.e. file directory names)
+      - `git mv` (i.e. *move / rename*) is a hack!
+
+   - `git` is *case sensitive*
+      - file / directory names (even branch names) lead to issues in interplay between case in/sensitive FSes
+
+### 2.2 git as VCS (fundamentals)
+
+   - `git` fundamentals are:
       1. Objects:
          1. ***blobs***
          2. ***trees***
          3. ***commits***
       2. Naming system for the objects:
          1. ***references***
-      - See for more details:
-         - [A Visual Guide to Git Internals](https://www.freecodecamp.org/news/git-internals-objects-branches-create-repo/)
+   - For more details:
+      - [A Visual Guide to Git Internals](https://www.freecodecamp.org/news/git-internals-objects-branches-create-repo/)
 
-### 1.3 Work session explained
+## 3. Work session explained
 
-   - local git, with no remote
-   - before we start:
+### 3.1 The premise
+
+   - from ***no repository*** ...
+   - ... to ***branches***, ***rebasing*** and ***merging***.
+
+   - at the same time explore `git` internals (*objects* and *references*)
+
+   - *local* `git`, with no remote (push / fetch)
+
+   - command-line only (Rambo mode)
+      - `git-bash`
+
+### 3.2 Session preparation
 
 ```sh
-    git config --global core.editor "/c/Windows/System32/notepad.exe"
+    EDITOR="/c/Windows/System32/notepad.exe"
+    git config --global core.editor $EDITOR
     alias tree=tree.com
 ```
 
-#### 1.3.1 Repository creation
+## 4. Repository creation
 
-   1. `ls -la`     # an empty directory
-   2. `git status` # fails
-   3. `git init`
-   4. `ls -la`     # git init created .git/ and it's contents
-   5. `git status` # git is alive
-   6. `git log`    # fails
-   7. `tree .git`
-   8. `rm .git/hooks/*`  # to focus on important stuff
-   9. `tree .git`
+### 4.1 `git init`
 
-#### 1.3.2 *Staging*: objects without reference
+   1. an empty directory
 
-   - git add (-p): The first objects (blobs and +TODO: trees)
-   - the need for garbage collection
+```sh
+    ls -la
+```
 
-   10. `>foods echo apple`
-   11. `ls -la; cat foods` # A new file created in working dir
-   12. `tree .git`   # no change under .git/ ... just workdir
-   13. `git add foods` # this changes .git/ contents
-   14. `tree .git`   # check index and files under objects/ subdirs
-   15. `git status`  # reflects staged contents
-   16. `git log   `  # still fails
-   17. `git cat-file -p bf355d87f92649d8b22a9beda5136e1a6acc1fa3` # shows file contents staged
-+TODO: git ls-tree ...
-   18. `wc -c .git/index`      # binary format; check size
-   19. `git rm --cached foods` # unstage the file
-   20. `git status`  # confirm unstaging
-   21. `tree .git`   # previously staged blobs await GC
-   22. `wc -c .git/index`  # smaller size; nothing staged now
-   23. `git add foods`     # will change index contents again
-   24. `wc -c .git/index`  # changed back to previous size
-   25. `git status`  # confirm staging
-   26. `git log`     # nothing changed; still fails
+   2. not a `git` repo yet (fails)
 
-   - other commands
-      - git status
-      - git rm --cached
-      - git diff --cached
+```sh
+    git status
+```
 
-### 1.3.3 Commit and the branch reference
+   3. create git repo
 
-   - git commit: The first commit objects and reference
+```sh
+    git init
+```
+
+   4. git init created `.git/` and it's contents
+
+```sh
+    ls -la
+```
+
+   5. git is alive
+
+```sh
+    git status
+```
+
+### 4.2 New repository explored
+
+   6. check `.git` folder structure
+
+```sh
+    tree .git
+```
+
+   7. remove unnecessary noise to focus
+
+```sh
+    rm .git/hooks/*
+```
+
+   8. this is `git`'s database
+
+```sh
+   tree .git
+```
+
+   9. no commits yet (fails)
+
+```sh
+    git log
+```
+
+## 5. *Staging*: objects without *reference*
+
+### 5.1 The *workdir*
+
+   - `git status`
+
+   10. create some content
+
+```sh
+    >foods echo apple
+    >>foods echo celery
+    >>foods echo cheese
+```
+
+   11. new file created is in *working directory*
+
+```sh
+    ls -la
+    cat foods
+```
+
+   12. no change under `.git/` ... just workdir
+
+```sh
+    tree .git
+```
+
+   13. *workdir* content reported
+
+```sh
+    git status
+```
+
+### 5.2 `git add`: *staging* blobs
+
+   - git add: The first objects (blobs)
+
+   14. add to *staging* (AKA *index* AKA *cache*)
+
+```sh
+    git add foods
+```
+
+   15. check `.git/index` and files under `.git/objects/`
+
+```sh
+    tree .git
+```
+
+   16. *staged* content reported
+
+```sh
+    git status
+```
+
+   17. view *staged* contents *blob*
+
+```sh
+    git cat-file -p bf355d87f9
+```
+
+   18. check size of binary `index` file
+
+```sh
+    wc -c .git/index
+```
+
+### 5.3 `git rm --cached`: *Unstaging*
+
+   - alternatively: `git reset -- file-to-unstage`
+
+   19. unstage the file
+
+```sh
+    git rm --cached foods
+```
+
+   20. confirm unstaging
+
+```sh
+    git status
+```
+
+   21. previously staged blobs await GC
+
+```sh
+    tree .git
+```
+
+   22. smaller size because nothing staged now
+
+```sh
+    wc -c .git/index
+```
+
+   - note the need for git repo blobs garbage collection
+
+### 5.4 Stage again
+
+   23. will change index contents again
+
+```sh
+    git add foods
+```
+
+   24. changed back to previous size
+
+```sh
+    wc -c .git/index
+```
+
+   25. confirm staging
+
+```sh
+    git status
+```
+
+   26. nothing changed (still fails)
+
+```sh
+    git log
+```
+
+## 6. Commit (and the branch *reference*)
+
+### 6.1 The first commit
+
+   - git commit: The first commit objects and *reference*
    - other commands
       - git log
 
-   27. `git commit --author="Alice <alice>" -m created`  # first commit
-   28. `git log`           # view commits
-   29. `git status`        # previous staged objects no longer there
-   30. `wc -c .git/index`  # new staging index
-   31. `tree .git`         # new toplevel logs/, more objects and COMMIT_EDITMSG
-   32. `git cat-file -p 2080c5844204aa95bd2d9a6f54db449117e22417` # commit contents
-   33. `git cat-file -p 999724252ad70173e02541d2920f01cb797a53b5` # tree contents
-   34. `git cat-file -p bf355d87f92649d8b22a9beda5136e1a6acc1fa3` # the file contents
-   35. `cat .git/COMMIT_EDITMSG`
-   36. `cat .git/HEAD`               # points to branch HEAD
-   37. `cat .git/refs/heads/master`  # points to where we are now
-   38. `git tag v1`
+
+   27. first commit
+
+```sh
+    git commit --author="Alice <alice>" -m created
+```
+
+   28. view commits (at last a *log*)
+
+```sh
+    git log
+```
+
+   29. previous staged objects no longer there
+
+```sh
+    git status
+```
+
+   30. new staging index
+
+```sh
+    wc -c .git/index
+```
+
+### 6.2 Commit trees and blobs dissected
+
+   31. new toplevel `logs/`, more objects and `COMMIT_EDITMSG`
+
+```sh
+    tree .git
+```
+
+   32. commit contents
+
+```sh
+    git cat-file -p 2080c5844
+```
+
+   33. tree contents
+
+```sh
+    git cat-file -p 99972425
+```
+
+   34. the file contents
+
+```sh
+    git cat-file -p bf355d87f
+```
+
+   35. commit message is maintained (for conflict resolution commits)
+
+```sh
+    cat .git/COMMIT_EDITMSG
+```
+
+### 6.3 Commit `HEAD` *references*
+
+   36. points to branch HEAD
+
+```sh
+    cat .git/HEAD
+```
+
+   37. points to branch `HEAD` revision
+
+```sh
+    cat .git/refs/heads/master
+```
+
+   38. tag this revision so we may return
+
+```sh
+    git tag v1
+```
 
    - See for more details:
       - [how is git commit sha1 formed](https://gist.github.com/masak/2415865)
 
-### 1.3.4 Commit with one parent
 
-   - the first commit is Adam (parentless)
+## 7. Commit with *one* parent
+
+### 7.1 Abel or Cain commit
+
+   - the first commit is *Adam* (parentless)
    - all other commits have parent(s)
 
-   38. make changes
+   39. make changes
 
 ```sh
     >>foods echo eggs
+    >>foods echo grape
+    >>foods echo lettuce
 ```
 
-   39. incrementally stage changes
+   40. incrementally stage changes
 
 ```sh
     git add -p .
 ```
 
-   40. Ready to commit
+   41. Ready to commit
 
 ```sh
     git commit --author="Bob <bob>" -m middle
 ```
 
-   41. Check the commit blob
+### 7.2 Check new commit `git` internals
+
+   42. Check the commit blob
 
 ```sh
     git cat-file -p 548b3cf
 ```
 
-   42. Check the commit's tree object
+   43. Check the commit's tree object
 
 ```sh
-    git ls-tree c146d446dadf5555bd5701f964f796522c421be0
+    git ls-tree c146d446da
 ```
 
-   43. Commit object can be treated as a tree object also
+   44. Commit object can be treated as a tree object also
 
 ```sh
     git ls-tree 548b3cf
 ```
 
-   44. view new blob of data
+   45. view new blob of data
 
 ```sh
-    git cat-file -p bc6ef76a1a30a308b78bc4eb6a5f9141496635bd
+    git cat-file -p bc6ef76a1a
 ```
 
-   45. contrast with parentless commit
+### 7.3 Contrast with parentless (first ever) commit
+
+   46. contrast with parentless commit
 
 ```sh
     git cat-file -p 548b3cf
     git cat-file -p 2080c5
 ```
 
-   46. points to branch HEAD
+   47. points to branch HEAD
 
 ```sh
     cat .git/HEAD
 ```
 
-   47. points to where HEAD is now
+   48. points to where HEAD is now
 
 ```sh
     cat .git/refs/heads/master
 ```
 
-   48. we have history
+   49. we have history
 
 ```sh
     git log
 ```
 
-### 1.3.5 Branching is cheap and easy
+## 8. Branch is cheap
+
+### 8.1 Cheap and chic
 
    - branching is cheap!
    - branching creates only a reference (**no** new blobs, trees, commits)
+   - only problem is mental overhead of managing branches
+      - naming
+      - deleting
+      - merging
+      - pushing
+
    - commands:
       - git branch
       - git checkout
       - git show
+      - git diff --cached
 
-   49. `git branch feature/menu-expansion 2080c5`  # create a new branch
-   50. `tree .git`       # check new refs
-   51. `cat .git/refs/heads/feature/menu-expansion` # new branch HEAD
-   52. `git log`         # check the branch next to 1st commit
-   53. `git checkout feature/menu-expansion` # go back in time
-   54. `git log`
-   55. `git status`      # no changes in working dir or staging
-   56. `cat foods`       # we are back in time
-   57. `git show master:foods`	# this is the present so far
-   58. `>>foods echo nilk`
-   59. `git status`      # unstaged changes in working dir
-   60. `git diff`        # see unstaged changes diff
-   61. `git checkout .`  # scrap working dir changes; go to HEAD
-   62. `git diff`        # no changes anywhere
-   63. `>>foods echo milk`
-   64. `git diff --cached` # nothing staged yet
-   65. `git diff`          # working dir changes
-   66. `git add foods`
-   67. `git diff --cached` # staged changes
-   68. `git diff`          # nothing new in working dir
-   69. `git commit --author="Carol <carol>" -m last`
-   70. `git cat-file -p 251db71`  # same parent as HEAD of master
-   71. `git cat-file -p ...`      # check the new blob
-   72. `git log`
+### 8.2 Branch off some point in history
 
-### 1.3.6 Merge conflict
 
-   - git merge means "bring here and mix"
-   - you merge another branch ***into*** the current branch
-   - optimistic "locking" means with have to deal with conflicts
-   - git merge
-   - git merge --abort
+   50. create a new branch (but stay where we are)
 
-   73. `git log --graph --decorate --all`  # tips of the snake's tongue
-   74. `git status`   # nothing staged or in working dir
-   75. `cat .git/HEAD`        # HEAD's pointing to ...
-   76. `cat .git/refs/heads/feature/menu-expansion`
-   77. `git checkout master`  # switch to master branch
-   78. `git status`   # stil nothing staged or in working dir
-   79. `cat .git/HEAD`        # now HEAD's pointing to ...
-   80. `cat .git/refs/heads/master`  # check master HEAD commit
-   81. `tree .git`   # business as usual
-   82. `git merge feature/menu-expansion` # feel the pain
-   83. `cat foods`    # the familiar mess
-   84. `git status`   # shows status and suggestions
-   85. `cat .git/HEAD` # where is my HEAD?
-   86. `cat .git/refs/heads/master` # HEAD didn't move from master
-   87. `tree .git`   # look into the abyss
-   88. `cat .git/AUTO_MERGE`
-   89. `cat .git/MERGE_HEAD`
-   90. `git log -1 $(!!)` # the feature branch HEAD
-   91. `cat .git/MERGE_MODE`  # nothing here
-   92. `cat .git/MERGE_MSG`   # the message to assist with committing later on
-   93. `git cat-file -p $(cat .git/AUTO_MERGE)`
-   94. `git cat-file -p 4e5e86` # check contents with conflict
-   95. `git merge --abort 
-   96. `tree .git`   # no more *MERGE* files
+```sh
+    git branch feature/menu-expansion 2080c5
+```
 
-### 1.3.7 Merge commit parents
+   51. check new refs
+
+```sh
+    tree .git
+```
+
+   52. new branch HEAD
+
+```sh
+    cat .git/refs/heads/feature/menu-expansion
+```
+
+   53. check the branch next to 1st commit
+
+```sh
+    git log
+```
+
+### 8.3 `git checkout`: goto branch
+
+   54. change workdir to where branch HEAD is
+
+```sh
+    git checkout feature/menu-expansion
+```
+
+   55. confirm we've moved
+
+```sh
+    git log
+```
+
+   56. no changes in working dir or staging
+
+```sh
+    git status
+```
+
+   57. confirm we are back in time
+
+```sh
+    cat foods
+```
+
+   58. `master` branch content differs
+
+```sh
+    git show master:foods
+```
+
+### 8.4 A bad start on the branch
+
+   59. more food
+
+```sh
+    >>foods echo milk
+```
+
+   60. changes in working dir (not staged yet)
+
+```sh
+    git status
+```
+
+   61. see working dir changes
+
+```sh
+    git diff
+```
+
+   62. scrap working dir changes (checkout branch HEAD as workdir)
+
+```sh
+    git checkout .
+```
+
+   63. no changes anywhere
+
+```sh
+    git diff
+```
+
+### 8.5 Stage work for branch
+
+   64. more food
+
+```sh
+    >>foods echo milk
+    >>foods echo orange
+    >>foods echo peas
+```
+
+   65. working dir changes
+
+```sh
+    git diff
+```
+
+   66. stage changes
+
+```sh
+    git add foods
+```
+
+   67. nothing new in working dir
+
+```sh
+    git diff
+```
+
+   68. check staged changes
+
+```sh
+    git diff --cached
+```
+
+### 8.6 Commit to branch
+
+   69. Carol commits
+
+```sh
+    git commit --author="Carol <carol>" -m last
+```
+
+   70. same parent as `HEAD` of master
+
+```sh
+    git cat-file -p 251db71
+```
+
+   71. check the new blob
+
+```sh
+    git cat-file -p ...
+```
+
+   72. log reflects new changes
+
+```sh
+    git log
+```
+
+## 9. Merge can be ... hell!
+
+### 9.1 Merge ... directions
+
+   - `git merge` means *"****bring*** *here and mix"*
+   - we merge another branch ***into the current*** **branch**
+   - optimistic "locking" means we could have to deal with conflicts
+
+### 9.2 Prepare to merge
+
+   73. tips of the snake's tongue
+
+```sh
+    git log --graph --decorate --all
+```
+
+   74. nothing staged or in working dir
+
+```sh
+    git status
+```
+
+   75. `HEAD`'s pointing to ...
+
+```sh
+    cat .git/HEAD
+```
+
+   76. branch `HEAD` points to ...
+
+```sh
+    cat .git/refs/heads/feature/menu-expansion
+```
+
+### 9.3 Merge conflict
+
+   77. switch to master branch
+
+```sh
+    git checkout master
+```
+
+   78. still nothing staged or in working dir
+
+```sh
+    git status
+```
+
+   79. now HEAD's pointing to ...
+
+```sh
+    cat .git/HEAD
+```
+
+   80. check `master HEAD` commit
+
+```sh
+    cat .git/refs/heads/master
+```
+
+   81. business as usual
+
+```sh
+    tree .git
+```
+
+   82. *ready?*
+
+```sh
+    git merge feature/menu-expansion # feel the pain
+```
+
+### 9.4 Dealing with the mess
+
+   83. the familiar mess
+
+```sh
+    cat foods
+```
+
+   84. shows status and suggestions
+
+```sh
+    git status
+```
+
+   85. where is my `HEAD`?
+
+```sh
+    cat .git/HEAD
+```
+
+   86. `HEAD` didn't move from `master`
+
+```sh
+    cat .git/refs/heads/master
+```
+
+### 9.5 Merge conflict `git` internals (part 1)
+
+   87. look into the abyss
+
+```sh
+    tree .git
+```
+
+   88. `AUTO_MERGE`?
+
+```sh
+    cat .git/AUTO_MERGE
+```
+
+   89. `MERGE_HEAD`?
+
+```sh
+    cat .git/MERGE_HEAD
+```
+
+   90. the feature branch HEAD
+
+```sh
+    git log -1 $(cat .git/MERGE_HEAD)
+```
+
+### 9.5 Merge conflict `git` internals (part 2)
+
+   91. nothing here
+
+```sh
+    cat .git/MERGE_MODE
+```
+
+   92. the message to assist with committing later on
+
+```sh
+    cat .git/MERGE_MSG
+```
+
+   93. What changes did I make to resolve conflicts so far?
+
+```sh
+    git cat-file -p $(cat .git/AUTO_MERGE)
+```
+
+   94. check contents with conflict
+
+```sh
+    git cat-file -p 4e5e86
+```
+
+### 9.6 `git merge --abort`: backing off!
+
+   95. Abort the whole ordeal
+
+```sh
+    git merge --abort 
+```
+
+   96. `*MERGE*` files disappeared
+
+```sh
+    tree .git
+```
+
+## 10. Merge commit (and parents)
+
+### 10.1 Merge commit as we know it
 
    - resolve the conflict
-   - merges (you're used to) have more than one parent
+   - merges (as we know them) have more than one parent
    - merged history is interleaved branches history
 
-   97. `git merge feature/menu-expansion`
-   98. `git diff`           # what a mess
-   99. `git diff --cached`  # nothing to see here
-   100. `vim foods`         # resolve conflict
-   101. `git diff`          # looks better
-   102. `git add foods`     # staged
-   103. `git diff --cached` # staged changes
-   104. `tree .git`        # new blob created, index changed
-   105. `git cat-file -p ...`     # relevant blob object
-   106. `git commit`        # merged work committed
-   107. `git cat-file -p 755b5f8` # check commit blob's contents
-   108. `git cat-file -p ...; git cat-file -p ...` # check commit blob's parents
-   109. `git ls-tree ...`     # check merge commit's tree object
-   110. `git cat-file -p ...` # confirm it points to new contents
-   111. `git log`             # the history is interleaved
+### 10.2 Merge again
 
-### 1.3.8 Fast-forward merges
+   97. merge
 
-   - git merge work that progressed while main branch (`master`?) kept still
+```sh
+    git merge feature/menu-expansion
+```
+
+   98. what a mess!
+
+```sh
+    git diff
+```
+
+   99. nothing to see here
+
+```sh
+    git diff --cached
+```
+
+### 10.3 Resolve at last
+
+   100. resolve conflict
+
+```sh
+    vim foods
+```
+
+   101. looks better
+
+```sh
+    git diff
+```
+
+   102. stage it
+
+```sh
+    git add foods
+```
+
+   103. staged changes
+
+```sh
+    git diff --cached
+```
+
+   104. new blob created, index changed
+
+```sh
+    tree .git
+```
+
+   105. relevant blob object
+
+```sh
+    git cat-file -p ...
+```
+
+### 10.4 The merge commit (at last)
+
+   106. merged work committed
+
+```sh
+    git commit
+```
+
+   107. check commit blob's contents
+
+```sh
+    git cat-file -p 755b5f8
+```
+
+   108. check commit blob's parents
+
+```sh
+    git cat-file -p ...; git cat-file -p ...
+```
+
+   109. check merge commit's tree object
+
+```sh
+    git ls-tree ...
+```
+
+   110. confirm it points to new contents
+
+```sh
+    git cat-file -p ...
+```
+
+   111. the history is interleaved
+
+```sh
+    git log
+```
+
+## 11. Fast-forward merges
+
+### 11.1 Fast-forward merges are a delight!
+
+   - `git merge` work that progressed while main branch (`master`?) kept still
    - fast-forward merges don't get conflicts!
    - fast-forward merges don't get interleaved history!
-   - best scenario for the person merging (into `master`) not to have to resolve conflicts!
+   - best scenario for the person merging (into `master`)
+      - they will *not* have to resolve conflicts!
+   - *it's as if we never branched!*
 
-   112. `git checkout -b hotfix/quick`
-   113. `>>foods echo curry`
-   114. `git add foods`
-   115. `git commit --author="David <david>" -m delicious`
-   116. `git log`   # confirm that you are ahead of master
-   117. `git checkout master`
-   118. `git merge hotfix/quick`  # notice the fast-forward mention
-   119. `git log -2` # shows that master and hotfix/quick point to same commit
-   120. `git cat-file -p 0f7221d` # just one parent
+### 11.2 Working on a hotfix
+
+   112. work on a *quick* hotfix
+
+```sh
+    git checkout -b hotfix/quick
+```
+
+   113. fix quick!
+
+```sh
+    >>foods echo curry
+```
+
+   114. stage and ...
+
+```sh
+    git add foods
+```
+
+   115. ... fast, commit!
+
+```sh
+    git commit --author="David <david>" -m delicious
+```
+
+### 11.3 A piece of good fortune
+
+   116. note that we are ahead of `master`
+
+```sh
+    git log
+```
+
+   117. checkout `master` branch
+
+```sh
+    git checkout master
+```
+
+   118. notice the **fast-forward** mention
+
+```sh
+    git merge hotfix/quick
+```
+
+   119. shows that `master` and `hotfix/quick` point to same commit
+
+```sh
+    git log -2
+```
+
+   120. just one parent
+
+```sh
+    git cat-file -p 0f7221d
+```
+
+## 12. Rebasing
+
+### 12.1 What is `rebase`?
+
+   - `rebase`: the current branch commits are ...
+      - ... based onto something new
+      - ... floated on top of another commit
+
+   - we rebase the current branch ***onto*** another branch
+      - ***BUT*** we stay in the ***current*** **branch**
+      - the other branch is ***not*** **modified**
+      - the current branch history changes ... *"toxically"*
 
 
-### 1.3.9 Rebasing
+### 12.2 Let's try rebasing ...
 
-   - rebasing takes place before merging
-   - you rebase the current branch ***onto*** another branch (without modifying in)
-   - it paves the way to the fast-forward merge
-   - conflicts are resolved by whoever worked on the branch
-   - rebasing ensures contiguous, localized commits
-   - it leads to readable git history
-   - it is a way of the Tao
+   121. go back to `v1`
 
-   - git rebase
-   - git reset --hard
+```sh
+    git reset --hard v1
+```
 
-   121. `git reset --hard v1`  # let's go back
-   122. `git checkout feature/menu-expansion`
-   123. `git log`
-   124. `git log master`
-   125. `git rebase master` # conflict but this time branch dev handles it
-   126. `git status`  # status and directions
-   127. `git diff`    # looks fimiliar
-   128. `vim foods`   # resolve conflicts
-   129. `git add foods`
-   130. `git rebase --continue`
-   131. `git log`
+   122. checkout a branch to rebase
 
-### 1.4 Conclusions
+```sh
+    git checkout feature/menu-expansion
+```
 
-   - all of git's knowledge of your project is in the `.git` sub-folder
-      - remove `.git` sub-folder and you lost all version information for the specific project
-   - git takes snapshots of your code and stores them as blobs under `.git`
-   - the deltas (git diff) you see are computed from the blobs, they are not stored
-   - git is cheap
-      - it is fast
+   123. confirm that we've diverged
+
+```sh
+    git log
+    git log master
+```
+
+   124. rebase ***onto*** `master`
+
+```sh
+    git rebase master   # conflict like with merge
+```
+
+   125. we're left in the middle of rebasing
+
+```sh
+    git status  # note the instructions in output
+```
+
+### 12.3 Resolve and `continue` the `rebase`
+
+   126. the familiar mess
+
+```sh
+    git diff
+```
+
+   127. resolve conflicts
+
+```sh
+    vim foods
+```
+
+   128. stage the resolution
+
+```sh
+    git add foods
+```
+
+   129. What changes did I make to resolve conflicts so far?
+
+```sh
+    git cat-file -p $(cat .git/AUTO_MERGE)
+```
+
+   130. *continue* with the rebase
+
+```sh
+    git rebase --continue
+```
+
+   131. confirm the rebase in the log
+
+```sh
+    git log
+```
+
+### 12.4 To `rebase` is divine
+
+   - **rebase** ***before*** **merging**
+   - conflicts are resolved ***in*** the branch that rebases (current branch)
+   - rebasing ...
+      - ... paves the way to the (blissful) *fast-forward merge*
+      - ... ensures contiguous, localized commits
+      - ... leads to readable git history
+      - ... is a way of the Tao
+
+
+## 13. Conclusions
+
+### 13.1 Let's recap
+
+   - all of `git`'s knowledge of your project is in `.git` folder
+      - remove `.git` folder and we lost all version information for the project
+   - `git` takes snapshots of your code and stores them as blobs under `.git`
+   - the deltas we see (`git diff`) are *computed* from the blobs, they are not stored
+
+### 13.2 So what?
+
+   - `git` is cheap
       - it re-uses blobs
-   - you can take advantage of version control for the silliest, temporary, little, insignificant projects
-      - you can scrap the project's history easily once you're done if you're concerned about space
-      - you can leave the history there for your future self to remember what you were up to in the past
+      - it is fast
+      - it is safe
+
+   - take advantage of version control in even the silliest, *"just to test"* projects
+      - scrap the project's history easily (delete `.git`) once done, or
+      - leave the history there for our future self
+      - feel safe to experiment (*branch* or not)
+
